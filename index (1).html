@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALDFG Watch India — Citizen Science Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   ALDFG WATCH INDIA — CITIZEN SCIENCE PORTAL
+   ICAR-CIFE, Mumbai | FAO/GGGI Compliant Data Collection
+   
+   ★ CONFIGURATION — PASTE YOUR GOOGLE APPS SCRIPT URL BELOW ★
+   ============================================================ */
+:root {
+  --SHEETS_URL: ""; /* <-- PASTE YOUR WEB APP URL HERE (between the quotes) */
+
+  --ocean: #0C3B5C;
+  --ocean-mid: #1A6FA8;
+  --ocean-light: #E6F3FB;
+  --teal: #0B5E48;
+  --teal-mid: #1D9E75;
+  --teal-light: #E1F5EE;
+  --amber: #7C3E0A;
+  --amber-mid: #C07020;
+  --amber-light: #FDF0DC;
+  --red: #8B2020;
+  --red-mid: #C84040;
+  --red-light: #FDEAEA;
+  --sand: #F8F4EE;
+  --ink: #1A1C1E;
+  --muted: #5A6070;
+  --border: #D4DDE8;
+  --white: #FFFFFF;
+  --radius: 10px;
+  --shadow: 0 2px 16px rgba(12,59,92,0.10);
+  --shadow-lg: 0 6px 32px rgba(12,59,92,0.15);
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--sand);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ─── HEADER ─── */
+.site-header {
+  background: linear-gradient(135deg, var(--ocean) 0%, #0A4D7A 60%, #0F6E56 100%);
+  color: #fff;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+}
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header-logo {
+  width: 46px; height: 46px;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.header-titles { flex: 1; }
+.header-titles h1 {
+  font-family: var(--font-head);
+  font-size: 18px; font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+.header-titles p {
+  font-size: 11px;
+  opacity: 0.75;
+  font-weight: 300;
+  margin-top: 2px;
+}
+.header-badges {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.hbadge {
+  font-size: 10px; font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.12);
+  letter-spacing: 0.04em;
+}
+
+/* ─── NAV TABS ─── */
+.nav-bar {
+  background: var(--ocean);
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  padding: 0 24px;
+}
+.nav-tab {
+  padding: 11px 20px;
+  color: rgba(255,255,255,0.6);
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  background: none; border-top: none; border-left: none; border-right: none;
+  white-space: nowrap;
+}
+.nav-tab:hover { color: rgba(255,255,255,0.9); }
+.nav-tab.active {
+  color: #fff;
+  border-bottom-color: var(--teal-mid);
+}
+
+/* ─── MAIN LAYOUT ─── */
+.main-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 24px 60px;
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── ALERT / STATUS BANNER ─── */
+.config-alert {
+  background: var(--amber-light);
+  border: 1.5px solid var(--amber-mid);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+}
+.config-alert.hidden { display: none; }
+.config-alert strong { color: var(--amber); }
+.config-alert code {
+  font-family: var(--font-mono);
+  background: rgba(124,62,10,0.12);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ─── SECTION HEADING ─── */
+.section-head {
+  margin-bottom: 20px;
+}
+.section-head h2 {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ocean);
+}
+.section-head p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ─── CARD ─── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card-head {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ocean);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--ocean-light);
+  display: flex; align-items: center; gap: 8px;
+}
+.card-head span { font-size: 16px; }
+
+/* ─── FORM GRID ─── */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.form-group label .req { color: var(--red-mid); }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: var(--white);
+  color: var(--ink);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--ocean-mid);
+  box-shadow: 0 0 0 3px rgba(26,111,168,0.12);
+}
+.form-group textarea { resize: vertical; min-height: 80px; }
+
+/* ─── GPS BUTTON ─── */
+.gps-row { display: flex; gap: 8px; align-items: flex-end; }
+.gps-row input { flex: 1; }
+.btn-gps {
+  padding: 9px 14px;
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.btn-gps:hover { background: var(--teal-mid); }
+
+/* ─── MEDIA UPLOAD ─── */
+.media-drop {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--sand);
+}
+.media-drop:hover, .media-drop.dragover {
+  border-color: var(--ocean-mid);
+  background: var(--ocean-light);
+}
+.media-drop .drop-icon { font-size: 32px; margin-bottom: 8px; }
+.media-drop p { font-size: 13px; color: var(--muted); }
+.media-drop strong { color: var(--ocean); }
+.media-drop input[type=file] { display: none; }
+.media-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.media-thumb {
+  position: relative;
+  width: 80px; height: 80px;
+  border-radius: 7px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: var(--ink);
+}
+.media-thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.media-thumb .thumb-rm {
+  position: absolute; top: 3px; right: 3px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.media-thumb .vid-flag {
+  position: absolute; bottom: 4px; left: 4px;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+/* ─── SEVERITY SCALE ─── */
+.severity-scale {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sev-btn {
+  padding: 8px 14px;
+  border-radius: 7px;
+  border: 2px solid var(--border);
+  background: var(--white);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.18s;
+  font-family: var(--font-body);
+}
+.sev-btn[data-val="1"] { color: #2e7d32; }
+.sev-btn[data-val="2"] { color: #558b2f; }
+.sev-btn[data-val="3"] { color: #f57f17; }
+.sev-btn[data-val="4"] { color: #e65100; }
+.sev-btn[data-val="5"] { color: #b71c1c; }
+.sev-btn.active { border-color: currentColor; background: rgba(0,0,0,0.05); }
+
+/* ─── SUBMIT BUTTON ─── */
+.btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 28px;
+  background: linear-gradient(135deg, var(--ocean) 0%, var(--teal) 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  letter-spacing: 0.02em;
+  margin-top: 6px;
+}
+.btn-submit:hover { opacity: 0.92; transform: translateY(-1px); }
+.btn-submit:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+/* ─── SUCCESS TOAST ─── */
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--teal);
+  color: #fff;
+  padding: 14px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: var(--shadow-lg);
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+  opacity: 0;
+  z-index: 999;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ─── DATABASE TAB ─── */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  text-align: center;
+}
+.stat-card .stat-num {
+  font-family: var(--font-head);
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--ocean);
+  line-height: 1;
+}
+.stat-card .stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-top: 4px;
+  font-weight: 600;
+}
+.export-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.btn-export {
+  padding: 9px 18px;
+  border-radius: 7px;
+  border: 2px solid var(--ocean);
+  color: var(--ocean);
+  background: var(--white);
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.btn-export:hover {
+  background: var(--ocean);
+  color: #fff;
+}
+.btn-export.excel { border-color: #1e7145; color: #1e7145; }
+.btn-export.excel:hover { background: #1e7145; color: #fff; }
+.reports-table-wrap { overflow-x: auto; }
+.reports-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.reports-table th {
+  background: var(--ocean);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-family: var(--font-head);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.reports-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+}
+.reports-table tr:hover td { background: var(--ocean-light); }
+.badge-sev {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.sev-1 { background: #e8f5e9; color: #2e7d32; }
+.sev-2 { background: #f1f8e9; color: #558b2f; }
+.sev-3 { background: #fff8e1; color: #f57f17; }
+.sev-4 { background: #fbe9e7; color: #e65100; }
+.sev-5 { background: #ffebee; color: #b71c1c; }
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.empty-state .big { font-size: 36px; margin-bottom: 10px; }
+
+/* ─── SPECIES LOG ─── */
+.species-entry-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 60px;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.btn-rm-sp {
+  height: 38px;
+  border: none;
+  background: var(--red-light);
+  color: var(--red-mid);
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+.btn-rm-sp:hover { background: var(--red); color: #fff; }
+.btn-add-sp {
+  padding: 8px 16px;
+  border: 2px dashed var(--teal-mid);
+  background: var(--teal-light);
+  color: var(--teal);
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+.btn-add-sp:hover { background: var(--teal-mid); color: #fff; border-style: solid; }
+
+/* ─── PROTOCOL TAB ─── */
+.protocol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.protocol-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  border-top: 4px solid var(--ocean-mid);
+}
+.protocol-card h3 {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ocean);
+  margin-bottom: 10px;
+}
+.protocol-card ul {
+  list-style: none;
+  padding: 0;
+}
+.protocol-card ul li {
+  font-size: 13px;
+  padding: 5px 0;
+  padding-left: 18px;
+  position: relative;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.protocol-card ul li:last-child { border-bottom: none; }
+.protocol-card ul li::before {
+  content: '›';
+  position: absolute;
+  left: 4px;
+  color: var(--ocean-mid);
+  font-weight: 700;
+}
+
+/* ─── INTEGRATION GUIDE ─── */
+.integration-steps {
+  counter-reset: step;
+}
+.int-step {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: flex-start;
+}
+.int-step-num {
+  width: 32px; height: 32px;
+  background: var(--ocean);
+  color: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.int-step-body h4 {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.int-step-body p, .int-step-body li {
+  font-size: 13px;
+  color: var(--muted);
+}
+.int-step-body code {
+  font-family: var(--font-mono);
+  background: var(--ocean-light);
+  color: var(--ocean);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.code-block {
+  background: #1A1C1E;
+  color: #E8EAF0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+  margin: 8px 0;
+  position: relative;
+}
+.code-block .copy-btn {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.code-block .copy-btn:hover { background: rgba(255,255,255,0.2); }
+
+/* ─── FOOTER ─── */
+.site-footer {
+  background: var(--ocean);
+  color: rgba(255,255,255,0.6);
+  text-align: center;
+  padding: 18px 24px;
+  font-size: 12px;
+}
+.site-footer a { color: rgba(255,255,255,0.8); }
+
+@media(max-width:600px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .header-badges { display: none; }
+  .species-entry-row { grid-template-columns: 1fr 1fr; }
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT CONFIGURATION
+     ★ EDIT THIS LINE WITH YOUR WEB APP URL ★
+═══════════════════════════════════════════ -->
+<script>
+// ╔══════════════════════════════════════════════════╗
+// ║  STEP 1: PASTE YOUR GOOGLE APPS SCRIPT URL HERE ║
+// ║  (from Deploy → Manage Deployments in           ║
+// ║   script.google.com)                            ║
+// ╚══════════════════════════════════════════════════╝
+const SHEETS_WEBAPP_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
+
+// ── Internal State ──────────────────────────────────
+let reports = JSON.parse(localStorage.getItem('aldfg_reports') || '[]');
+let speciesLogs = JSON.parse(localStorage.getItem('aldfg_species') || '[]');
+let selectedSeverity = 0;
+let mediaFiles = [];
+let speciesEntries = [{ species: '', group: '', condition: '', count: '', depth: '' }];
+
+// ── Utility ─────────────────────────────────────────
+function genRef() {
+  const dt = new Date();
+  const ymd = dt.getFullYear().toString().slice(2)
+    + String(dt.getMonth()+1).padStart(2,'0')
+    + String(dt.getDate()).padStart(2,'0');
+  return 'ALDFG-' + ymd + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+}
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color || 'var(--teal)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+function isConnected() {
+  return SHEETS_WEBAPP_URL && SHEETS_WEBAPP_URL !== "PASTE_YOUR_WEB_APP_URL_HERE";
+}
+function saveLocal() {
+  localStorage.setItem('aldfg_reports', JSON.stringify(reports));
+  localStorage.setItem('aldfg_species', JSON.stringify(speciesLogs));
+}
+function updateStats() {
+  document.getElementById('stat-total').textContent = reports.length;
+  const gearTypes = [...new Set(reports.map(r => r.gearType).filter(Boolean))];
+  document.getElementById('stat-types').textContent = gearTypes.length;
+  const highSev = reports.filter(r => r.severity >= 4).length;
+  document.getElementById('stat-high').textContent = highSev;
+  document.getElementById('stat-species').textContent = speciesLogs.reduce((a,l) => a + (l.speciesEntries ? l.speciesEntries.length : 0), 0);
+}
+function renderTable() {
+  const tbody = document.getElementById('reports-tbody');
+  if (!reports.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="big">🌊</div>No reports submitted yet. Start reporting ghost gear!</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = reports.slice().reverse().map(r => `
+    <tr>
+      <td><code style="font-family:var(--font-mono);font-size:11px;">${r.ref}</code></td>
+      <td>${r.date}</td>
+      <td>${r.reporter}</td>
+      <td>${r.district || '—'}</td>
+      <td>${r.gearType || '—'}</td>
+      <td>${r.habitat || '—'}</td>
+      <td><span class="badge-sev sev-${r.severity}">${r.severity}/5</span></td>
+      <td>${r.retrieval || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Tab Navigation ───────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  document.querySelector(`[data-tab="${id}"]`).classList.add('active');
+  if (id === 'db') { updateStats(); renderTable(); }
+}
+
+// ── GPS Auto-Fill ────────────────────────────────────
+function getGPS() {
+  if (!navigator.geolocation) return alert('Geolocation not available on this device.');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      document.getElementById('r-lat').value = pos.coords.latitude.toFixed(6);
+      document.getElementById('r-lon').value = pos.coords.longitude.toFixed(6);
+      showToast('📍 GPS coordinates captured!');
+    },
+    () => alert('Could not get location. Please enter manually.')
+  );
+}
+function getGPS_sp() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    document.getElementById('sp-lat').value = pos.coords.latitude.toFixed(6);
+    document.getElementById('sp-lon').value = pos.coords.longitude.toFixed(6);
+    showToast('📍 GPS captured!');
+  });
+}
+
+// ── Media Upload ─────────────────────────────────────
+function setupDrop() {
+  const zone = document.getElementById('media-zone');
+  const input = document.getElementById('media-input');
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+  input.addEventListener('change', () => handleFiles(input.files));
+}
+function handleFiles(files) {
+  Array.from(files).forEach(f => {
+    mediaFiles.push(f);
+    const thumb = document.createElement('div');
+    thumb.className = 'media-thumb';
+    const idx = mediaFiles.length - 1;
+    if (f.type.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(f);
+      thumb.appendChild(img);
+    } else if (f.type.startsWith('video/')) {
+      thumb.style.background = '#1A1C1E';
+      thumb.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:26px;">🎬</div>';
+      const flag = document.createElement('div');
+      flag.className = 'vid-flag';
+      flag.textContent = 'VIDEO';
+      thumb.appendChild(flag);
+    }
+    const rm = document.createElement('button');
+    rm.className = 'thumb-rm';
+    rm.textContent = '×';
+    rm.onclick = (e) => { e.stopPropagation(); mediaFiles[idx] = null; thumb.remove(); };
+    thumb.appendChild(rm);
+    document.getElementById('media-preview').appendChild(thumb);
+  });
+  showToast(`${files.length} file(s) added`);
+}
+
+// ── Severity Select ──────────────────────────────────
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('sev-btn')) {
+    document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    selectedSeverity = parseInt(e.target.dataset.val);
+  }
+});
+
+// ── Species Row Management ───────────────────────────
+function renderSpeciesRows() {
+  const container = document.getElementById('species-rows');
+  container.innerHTML = speciesEntries.map((sp, i) => `
+    <div class="species-entry-row">
+      <div class="form-group">
+        ${i === 0 ? '<label>Species Name</label>' : ''}
+        <input type="text" placeholder="e.g. Mugil cephalus" value="${sp.species}" oninput="speciesEntries[${i}].species=this.value">
+      </div>
+      <div class="form-group">
+        ${i === 0 ? '<label>Taxonomic Group</label>' : ''}
+        <select onchange="speciesEntries[${i}].group=this.value">
+          <option value="">— Select —</option>
+          ${['Finfish','Elasmobranch','Cephalopod','Crustacean','Echinoderm','Seagrass','Seaweed/Algae','Coral','Turtle','Marine Mammal','Seabird','Other'].map(g => `<option ${sp.group===g?'selected':''} value="${g}">${g}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        ${i === 0 ? '<label>Condition</label>' : ''}
+        <select onchange="speciesEntries[${i}].condition=this.value">
+          <option value="">— —</option>
+          <option ${sp.condition==='Entangled'?'selected':''}>Entangled</option>
+          <option ${sp.condition==='Entrapped'?'selected':''}>Entrapped</option>
+          <option ${sp.condition==='Injured'?'selected':''}>Injured</option>
+          <option ${sp.condition==='Deceased'?'selected':''}>Deceased</option>
+          <option ${sp.condition==='Sheltering'?'selected':''}>Sheltering</option>
+          <option ${sp.condition==='Healthy/Near'?'selected':''}>Healthy/Near</option>
+        </select>
+      </div>
+      <div class="form-group">
+        ${i === 0 ? '<label>Count</label>' : ''}
+        <input type="number" placeholder="0" min="0" value="${sp.count}" oninput="speciesEntries[${i}].count=this.value">
+      </div>
+      <button class="btn-rm-sp" onclick="removeSpeciesRow(${i})" ${speciesEntries.length===1?'disabled':''}>×</button>
+    </div>
+  `).join('');
+}
+function addSpeciesRow() {
+  speciesEntries.push({ species: '', group: '', condition: '', count: '', depth: '' });
+  renderSpeciesRows();
+}
+function removeSpeciesRow(i) {
+  speciesEntries.splice(i, 1);
+  renderSpeciesRows();
+}
+
+// ── SUBMIT GEAR REPORT ───────────────────────────────
+function submitReport() {
+  const get = id => document.getElementById(id)?.value?.trim() || '';
+  if (!get('r-reporter') || !get('r-date') || !get('r-geartype')) {
+    showToast('⚠ Please fill required fields (Reporter, Date, Gear Type)', '#C07020');
+    return;
+  }
+
+  const rec = {
+    ref: genRef(),
+    date: get('r-date'),
+    time: get('r-time'),
+    reporter: get('r-reporter'),
+    email: get('r-email'),
+    org: get('r-org'),
+    reporterType: get('r-rtype'),
+    district: get('r-district'),
+    state: get('r-state'),
+    location: get('r-location'),
+    lat: get('r-lat'),
+    lon: get('r-lon'),
+    habitat: get('r-habitat'),
+    depthBand: get('r-depth'),
+    exactDepth: get('r-exactdepth'),
+    gearType: get('r-geartype'),
+    material: get('r-material'),
+    size: get('r-size'),
+    weight: get('r-weight'),
+    condition: get('r-condition'),
+    source: get('r-source'),
+    severity: selectedSeverity || 3,
+    retrieval: get('r-retrieval'),
+    notes: get('r-notes'),
+    mediaCount: mediaFiles.filter(Boolean).length,
+    submittedAt: new Date().toISOString(),
+    source_platform: 'ALDFG_Watch_India_v2',
+    gggi_compliant: 'Yes',
+    fao_vg_compliant: 'Yes'
+  };
+
+  reports.push(rec);
+  saveLocal();
+  updateStats();
+
+  // ─── SEND TO GOOGLE SHEETS ───────────────────────
+  if (isConnected()) {
+    fetch(SHEETS_WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...rec, type: 'report' })
+    }).catch(() => {/* silent — data saved locally */});
+  }
+  // ────────────────────────────────────────────────
+
+  showToast('✅ Report submitted! Ref: ' + rec.ref);
+  document.getElementById('report-form').reset();
+  selectedSeverity = 0;
+  document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('media-preview').innerHTML = '';
+  mediaFiles = [];
+}
+
+// ── SUBMIT SPECIES LOG ───────────────────────────────
+function submitSpecies() {
+  const get = id => document.getElementById(id)?.value?.trim() || '';
+  const validSpecies = speciesEntries.filter(s => s.species && s.group);
+  if (!get('sp-date') || !get('sp-observer') || !validSpecies.length) {
+    showToast('⚠ Fill Date, Observer, and at least one species row', '#C07020');
+    return;
+  }
+
+  const rec = {
+    ref: genRef(),
+    date: get('sp-date'),
+    observerType: get('sp-otype'),
+    observer: get('sp-observer'),
+    lat: get('sp-lat'),
+    lon: get('sp-lon'),
+    depthStart: get('sp-dstart'),
+    depthEnd: get('sp-dend'),
+    depthAvg: get('sp-davg'),
+    visibility: get('sp-vis'),
+    tempC: get('sp-temp'),
+    notableSpecies: get('sp-notable'),
+    habitatNotes: get('sp-habnotes'),
+    speciesEntries: validSpecies,
+    submittedAt: new Date().toISOString()
+  };
+
+  speciesLogs.push(rec);
+  saveLocal();
+  updateStats();
+
+  // ─── SEND TO GOOGLE SHEETS ───────────────────────
+  if (isConnected()) {
+    fetch(SHEETS_WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...rec, type: 'species' })
+    }).catch(() => {/* silent — data saved locally */});
+  }
+  // ────────────────────────────────────────────────
+
+  showToast('✅ Species log submitted! Ref: ' + rec.ref);
+  document.getElementById('species-form').reset();
+  speciesEntries = [{ species: '', group: '', condition: '', count: '' }];
+  renderSpeciesRows();
+}
+
+// ── EXPORT TO CSV ────────────────────────────────────
+function exportCSV() {
+  if (!reports.length) { showToast('No data to export', '#C07020'); return; }
+  const headers = ['Reference_ID','Date','Time','Reporter','Email','Organization','Reporter_Type',
+    'District','State','Location','Latitude','Longitude','Habitat','Depth_Band','Exact_Depth_m',
+    'Gear_Type','Material','Size','Weight_kg','Condition','Probable_Source','Severity_1to5',
+    'Retrieval_Feasibility','Notes','Media_Count','Submitted_At','GGGI_Compliant','FAO_VG_Compliant'];
+  const rows = reports.map(r => [
+    r.ref,r.date,r.time,r.reporter,r.email,r.org,r.reporterType,
+    r.district,r.state,r.location,r.lat,r.lon,r.habitat,r.depthBand,r.exactDepth,
+    r.gearType,r.material,r.size,r.weight,r.condition,r.source,r.severity,
+    r.retrieval,r.notes,r.mediaCount,r.submittedAt,'Yes','Yes'
+  ].map(v => '"'+(v||'')?.toString().replace(/"/g,'""')+'"'));
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'ALDFG_Reports_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  showToast('📥 CSV exported (' + reports.length + ' records)');
+}
+
+// ── EXPORT TO EXCEL ──────────────────────────────────
+function exportExcel() {
+  if (!reports.length) { showToast('No data to export', '#C07020'); return; }
+  // Build Excel-compatible HTML table
+  const headers = ['Reference ID','Date','Reporter','Email','Org','Reporter Type',
+    'District','State','Lat','Lon','Habitat','Depth Band','Gear Type','Material',
+    'Size','Weight(kg)','Condition','Source','Severity','Retrieval','Notes','Media Count','Submitted At','GGGI','FAO-VG'];
+  let tableHTML = `<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+  reports.forEach(r => {
+    tableHTML += `<tr>${[r.ref,r.date,r.reporter,r.email,r.org,r.reporterType,
+      r.district,r.state,r.lat,r.lon,r.habitat,r.depthBand,r.gearType,r.material,
+      r.size,r.weight,r.condition,r.source,r.severity,r.retrieval,r.notes,
+      r.mediaCount,r.submittedAt,'Yes','Yes']
+      .map(v=>`<td>${v||''}</td>`).join('')}</tr>`;
+  });
+  tableHTML += '</tbody></table>';
+  const blob = new Blob([`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"/></head><body>${tableHTML}</body></html>`], {type:'application/vnd.ms-excel'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ALDFG_Reports_' + new Date().toISOString().slice(0,10) + '.xls';
+  a.click();
+  showToast('📊 Excel file downloaded!');
+}
+
+// ── COPY CODE SNIPPET ────────────────────────────────
+function copyCode(btnEl) {
+  const block = btnEl.closest('.code-block');
+  const text = block.innerText.replace('Copy','').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btnEl.textContent = 'Copied!';
+    setTimeout(() => btnEl.textContent = 'Copy', 2000);
+  });
+}
+
+// ── INIT ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  switchTab('report');
+  setupDrop();
+  renderSpeciesRows();
+  updateStats();
+  renderTable();
+  // Show config alert if URL not set
+  if (!isConnected()) {
+    document.getElementById('config-alert').classList.remove('hidden');
+  }
+  // Set today's date
+  document.getElementById('r-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('sp-date').value = new Date().toISOString().slice(0,10);
+});
+</script>
+
+<!-- ═══════════════════════════════════ HEADER ═══ -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-logo">🌊</div>
+    <div class="header-titles">
+      <h1>ALDFG Watch India</h1>
+      <p>Abandoned, Lost & Discarded Fishing Gear — Citizen Science Data Portal</p>
+    </div>
+    <div class="header-badges">
+      <span class="hbadge badge-gggi">GGGI</span>
+      <span class="hbadge badge-fao">FAO-VG</span>
+      <span class="hbadge badge-cife">ICAR-CIFE</span>
+      <span class="hbadge">NFDB</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════ NAV ═══ -->
+<nav class="nav-bar">
+  <div class="nav-inner">
+    <button class="nav-tab active" data-tab="report" onclick="switchTab('report')">🎣 Report Gear</button>
+    <button class="nav-tab" data-tab="species" onclick="switchTab('species')">🐟 Species Log</button>
+    <button class="nav-tab" data-tab="db" onclick="switchTab('db')">📊 Database</button>
+    <button class="nav-tab" data-tab="protocol" onclick="switchTab('protocol')">📋 Protocol</button>
+    <button class="nav-tab" data-tab="connect" onclick="switchTab('connect')">🔗 Connect Sheet</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════ TOAST ═══ -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════ MAIN CONTENT ═══ -->
+<main class="main-wrap">
+
+  <!-- ─── CONFIG ALERT ─── -->
+  <div class="config-alert hidden" id="config-alert">
+    <span>⚠️</span>
+    <div>
+      <strong>Google Sheets not connected.</strong> Data is being saved locally in your browser only.
+      To sync submissions to your spreadsheet, go to the <strong>Connect Sheet</strong> tab for setup instructions,
+      then paste your Web App URL into the <code>SHEETS_WEBAPP_URL</code> variable at the top of the script.
+    </div>
+  </div>
+
+  <!-- ═══ TAB 1: GEAR REPORT ═══════════════════════════ -->
+  <div class="tab-panel active" id="panel-report">
+    <div class="section-head">
+      <h2>🎣 Report Abandoned / Lost Fishing Gear</h2>
+      <p>Document ghost gear sightings with precise data for GGGI and FAO databases.</p>
+    </div>
+    <form id="report-form" onsubmit="return false;">
+
+      <!-- Observer Info -->
+      <div class="card">
+        <div class="card-head"><span>👤</span> Observer Information</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Reporter Name <span class="req">*</span></label>
+            <input type="text" id="r-reporter" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label>Contact Email</label>
+            <input type="email" id="r-email" placeholder="email@example.com">
+          </div>
+          <div class="form-group">
+            <label>Organisation / Institution</label>
+            <input type="text" id="r-org" placeholder="ICAR-CIFE / NGO / etc.">
+          </div>
+          <div class="form-group">
+            <label>Reporter Type</label>
+            <select id="r-rtype">
+              <option value="">— Select —</option>
+              <option>Researcher/Scientist</option>
+              <option>SCUBA Diver</option>
+              <option>Fisher / Boat Crew</option>
+              <option>Drone Operator</option>
+              <option>Citizen Observer</option>
+              <option>NGO Worker</option>
+              <option>Government Officer</option>
+              <option>Student</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Observation Date <span class="req">*</span></label>
+            <input type="date" id="r-date">
+          </div>
+          <div class="form-group">
+            <label>Observation Time</label>
+            <input type="time" id="r-time">
+          </div>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="card">
+        <div class="card-head"><span>📍</span> Location</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>District</label>
+            <input type="text" id="r-district" placeholder="e.g. Ratnagiri">
+          </div>
+          <div class="form-group">
+            <label>State / UT</label>
+            <select id="r-state">
+              <option value="">— Select —</option>
+              <option>Maharashtra</option><option>Goa</option><option>Kerala</option>
+              <option>Karnataka</option><option>Tamil Nadu</option><option>Andhra Pradesh</option>
+              <option>Odisha</option><option>West Bengal</option><option>Gujarat</option>
+              <option>Andaman & Nicobar</option><option>Lakshadweep</option><option>Puducherry</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Location Description</label>
+            <input type="text" id="r-location" placeholder="Beach name, landmark, etc.">
+          </div>
+          <div class="form-group">
+            <label>GPS Coordinates</label>
+            <div class="gps-row">
+              <input type="number" id="r-lat" placeholder="Latitude" step="0.000001">
+              <button class="btn-gps" onclick="getGPS()">📍 Get GPS</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Longitude</label>
+            <input type="number" id="r-lon" placeholder="Longitude" step="0.000001">
+          </div>
+          <div class="form-group">
+            <label>Habitat Type</label>
+            <select id="r-habitat">
+              <option value="">— Select —</option>
+              <option>Sandy beach</option><option>Rocky shore</option><option>Mangrove</option>
+              <option>Coral reef</option><option>Seagrass bed</option><option>Kelp/algal bed</option>
+              <option>Subtidal soft bottom</option><option>Open water / pelagic</option><option>Estuary</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Depth Band</label>
+            <select id="r-depth">
+              <option value="">— Select —</option>
+              <option>Intertidal (0 m)</option><option>Shallow (0–10 m)</option>
+              <option>Mid-water (10–30 m)</option><option>Deep (>30 m)</option>
+              <option>Floating/Surface</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Exact Depth (m)</label>
+            <input type="number" id="r-exactdepth" placeholder="e.g. 12.5" step="0.1" min="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Gear Details -->
+      <div class="card">
+        <div class="card-head"><span>🪤</span> Gear Characterisation</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Gear Type <span class="req">*</span></label>
+            <select id="r-geartype">
+              <option value="">— Select —</option>
+              <option>Gillnet</option><option>Trawl net</option><option>Purse seine</option>
+              <option>Longline</option><option>Hook & line</option><option>Fish trap/pot</option>
+              <option>Crab/lobster trap</option><option>Drift net</option><option>Cast net</option>
+              <option>Lift net</option><option>Nylon monofilament</option>
+              <option>Rope / cordage</option><option>Float/buoy</option><option>Mixed/Unknown</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Primary Material</label>
+            <select id="r-material">
+              <option value="">— Select —</option>
+              <option>Nylon monofilament</option><option>Nylon multifilament</option>
+              <option>Polyethylene</option><option>Polypropylene</option>
+              <option>Natural fibre</option><option>Metal</option><option>Mixed</option><option>Unknown</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Estimated Size / Length</label>
+            <input type="text" id="r-size" placeholder="e.g. 50m × 3m, small fragment">
+          </div>
+          <div class="form-group">
+            <label>Estimated Weight (kg)</label>
+            <input type="number" id="r-weight" placeholder="e.g. 15" step="0.1" min="0">
+          </div>
+          <div class="form-group">
+            <label>Gear Condition</label>
+            <select id="r-condition">
+              <option value="">— Select —</option>
+              <option>Intact / active</option><option>Partially degraded</option>
+              <option>Heavily degraded</option><option>Microplastic fragments</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Probable Source</label>
+            <select id="r-source">
+              <option value="">— Select —</option>
+              <option>Artisanal fishery</option><option>Industrial trawl fishery</option>
+              <option>Aquaculture</option><option>Storm / flood event</option>
+              <option>Unknown</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Impact & Severity -->
+      <div class="card">
+        <div class="card-head"><span>⚠️</span> Impact Assessment</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Ecological Severity (1 = Minor, 5 = Critical)</label>
+            <div class="severity-scale">
+              <button type="button" class="sev-btn" data-val="1">1 — Minimal</button>
+              <button type="button" class="sev-btn" data-val="2">2 — Low</button>
+              <button type="button" class="sev-btn" data-val="3">3 — Moderate</button>
+              <button type="button" class="sev-btn" data-val="4">4 — High</button>
+              <button type="button" class="sev-btn" data-val="5">5 — Critical</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Retrieval Feasibility</label>
+            <select id="r-retrieval">
+              <option value="">— Select —</option>
+              <option>Immediately retrievable (surface)</option>
+              <option>Diver-accessible (&lt;30m)</option>
+              <option>Requires specialised equipment</option>
+              <option>Too degraded / embedded</option>
+              <option>Already removed</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label>Additional Notes / Observations</label>
+            <textarea id="r-notes" placeholder="Species interactions, gear entanglement, co-occurring litter, habitat damage details…"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Photo/Video Upload -->
+      <div class="card">
+        <div class="card-head"><span>📷</span> Photo & Video Evidence</div>
+        <div class="media-drop" id="media-zone">
+          <div class="drop-icon">📸</div>
+          <p><strong>Click to browse</strong> or drag & drop files here</p>
+          <p>Photos (JPG, PNG, HEIC, RAW) · Videos (MP4, MOV, AVI) · Drone & SCUBA footage welcome</p>
+          <input type="file" id="media-input" multiple accept="image/*,video/*">
+        </div>
+        <div class="media-preview" id="media-preview"></div>
+      </div>
+
+      <button type="button" class="btn-submit" onclick="submitReport()">
+        🚀 Submit Report
+      </button>
+    </form>
+  </div>
+
+  <!-- ═══ TAB 2: SPECIES LOG ════════════════════════════ -->
+  <div class="tab-panel" id="panel-species">
+    <div class="section-head">
+      <h2>🐟 Marine Species Interaction Log</h2>
+      <p>Document species affected by or interacting with ALDFG — SCUBA surveys, surface observations, drone transects.</p>
+    </div>
+    <form id="species-form" onsubmit="return false;">
+      <div class="card">
+        <div class="card-head"><span>📋</span> Survey Details</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Survey Date <span class="req">*</span></label>
+            <input type="date" id="sp-date">
+          </div>
+          <div class="form-group">
+            <label>Observer Name <span class="req">*</span></label>
+            <input type="text" id="sp-observer" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label>Observer Type</label>
+            <select id="sp-otype">
+              <option>SCUBA Diver</option><option>Snorkeler</option>
+              <option>Drone Operator</option><option>Vessel-based</option><option>Shore-based</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>GPS Location</label>
+            <div class="gps-row">
+              <input type="number" id="sp-lat" placeholder="Lat" step="0.000001">
+              <button type="button" class="btn-gps" onclick="getGPS_sp()">📍</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Longitude</label>
+            <input type="number" id="sp-lon" placeholder="Lon" step="0.000001">
+          </div>
+          <div class="form-group">
+            <label>Depth Start (m)</label>
+            <input type="number" id="sp-dstart" placeholder="0" step="0.5" min="0">
+          </div>
+          <div class="form-group">
+            <label>Depth End (m)</label>
+            <input type="number" id="sp-dend" placeholder="0" step="0.5" min="0">
+          </div>
+          <div class="form-group">
+            <label>Avg Depth (m)</label>
+            <input type="number" id="sp-davg" placeholder="0" step="0.5" min="0">
+          </div>
+          <div class="form-group">
+            <label>Visibility (m)</label>
+            <input type="number" id="sp-vis" placeholder="e.g. 8" step="0.5" min="0">
+          </div>
+          <div class="form-group">
+            <label>Water Temp (°C)</label>
+            <input type="number" id="sp-temp" placeholder="e.g. 28.5" step="0.1">
+          </div>
+          <div class="form-group full">
+            <label>Notable Species / Habitat Notes</label>
+            <textarea id="sp-notable" placeholder="Any unusual sightings, indicator species, habitat condition notes…" style="min-height:60px;"></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Habitat Condition Notes</label>
+            <textarea id="sp-habnotes" placeholder="Substrate type, coral cover, seagrass density, turbidity notes…" style="min-height:60px;"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span>🐠</span> Species Interactions with ALDFG</div>
+        <div id="species-rows"></div>
+        <button type="button" class="btn-add-sp" onclick="addSpeciesRow()">+ Add Species Row</button>
+      </div>
+
+      <button type="button" class="btn-submit" onclick="submitSpecies()">
+        🚀 Submit Species Log
+      </button>
+    </form>
+  </div>
+
+  <!-- ═══ TAB 3: DATABASE ════════════════════════════════ -->
+  <div class="tab-panel" id="panel-db">
+    <div class="section-head">
+      <h2>📊 Submitted Data Overview</h2>
+      <p>All locally stored submissions. Connect Google Sheets (see Connect Sheet tab) for persistent multi-user storage.</p>
+    </div>
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">Gear Reports</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-types">0</div>
+        <div class="stat-label">Gear Types</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-high">0</div>
+        <div class="stat-label">High Severity</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-species">0</div>
+        <div class="stat-label">Species Records</div>
+      </div>
+    </div>
+    <div class="export-row">
+      <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn-export excel" onclick="exportExcel()">📊 Export Excel (.xls)</button>
+    </div>
+    <div class="card">
+      <div class="card-head"><span>📋</span> Gear Reports Log</div>
+      <div class="reports-table-wrap">
+        <table class="reports-table">
+          <thead>
+            <tr>
+              <th>Reference ID</th><th>Date</th><th>Reporter</th><th>District</th>
+              <th>Gear Type</th><th>Habitat</th><th>Severity</th><th>Retrieval</th>
+            </tr>
+          </thead>
+          <tbody id="reports-tbody">
+            <tr><td colspan="8"><div class="empty-state"><div class="big">🌊</div>No reports yet.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 4: PROTOCOL ════════════════════════════════ -->
+  <div class="tab-panel" id="panel-protocol">
+    <div class="section-head">
+      <h2>📋 Field Protocol & GGGI Guidelines</h2>
+      <p>Data collection standards aligned with ECSA Principles, GGGI Best Practice Framework, and FAO Voluntary Guidelines.</p>
+    </div>
+    <div class="protocol-grid">
+      <div class="protocol-card">
+        <h3>📸 Photo Protocol</h3>
+        <ul>
+          <li>Minimum 3 photos per gear sighting (overview, close-up, scale reference)</li>
+          <li>Include a 1m scale bar or common object in frame</li>
+          <li>Ensure GPS/EXIF metadata is enabled on device</li>
+          <li>Photograph any entangled/trapped organisms separately</li>
+          <li>Record drone footage at minimum 4K / 30fps</li>
+          <li>SCUBA: note dive computer depth/time in same frame if possible</li>
+        </ul>
+      </div>
+      <div class="protocol-card">
+        <h3>📍 GPS Accuracy Standards</h3>
+        <ul>
+          <li>Record to minimum 6 decimal places (±1 m accuracy)</li>
+          <li>Use WGS84 datum (default on all smartphones)</li>
+          <li>For long stretches, record start and end coordinates</li>
+          <li>Drone surveys: record centroid of gear patch</li>
+          <li>Multiple gear aggregations: record each separately</li>
+        </ul>
+      </div>
+      <div class="protocol-card">
+        <h3>⚠️ Safety Guidelines</h3>
+        <ul>
+          <li>Never attempt SCUBA retrieval solo — minimum 2-diver rule</li>
+          <li>Do not cut or disturb gear with entangled live animals</li>
+          <li>Contact local fisheries dept. / coast guard before removal</li>
+          <li>Wear cut-resistant gloves when handling monofilament</li>
+          <li>Shore-based surveys: follow coastal safety protocols</li>
+        </ul>
+      </div>
+      <div class="protocol-card">
+        <h3>🔗 GGGI Data Pathway</h3>
+        <ul>
+          <li>Data exported from this portal is GGGI Best Practice compliant</li>
+          <li>Upload CSV to: gggi.org/data-portal (free registration)</li>
+          <li>FAO-VG flag columns auto-populated in export</li>
+          <li>For major removals: submit to GGGI Gear Retrieval Database</li>
+          <li>Cite as: ALDFG Watch India / ICAR-CIFE, [Year]</li>
+        </ul>
+      </div>
+      <div class="protocol-card">
+        <h3>🧬 eDNA Integration</h3>
+        <ul>
+          <li>Collect 1L water sample within 2m of ALDFG sighting</li>
+          <li>Filter through 0.45μm membrane, freeze immediately</li>
+          <li>Link eDNA sample ID to ALDFG report Reference ID</li>
+          <li>Use paired field blank and negative control per transect</li>
+        </ul>
+      </div>
+      <div class="protocol-card">
+        <h3>🚁 Drone Survey Protocol</h3>
+        <ul>
+          <li>Fly at 30–50m AGL for gear detection transects</li>
+          <li>Minimum overlap: 75% for photogrammetry</li>
+          <li>Ground control points: minimum 5 per survey area</li>
+          <li>Report flight log ID alongside ALDFG reference</li>
+          <li>Comply with DGCA NPNT requirements for coastal airspace</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 5: CONNECT SHEET ══════════════════════════ -->
+  <div class="tab-panel" id="panel-connect">
+    <div class="section-head">
+      <h2>🔗 Connect to Google Sheets (Live Sync)</h2>
+      <p>Follow these steps to wire this portal to your Google Sheet so every submission auto-populates a new row in real time.</p>
+    </div>
+    <div class="card">
+      <div class="card-head"><span>📋</span> Step-by-Step Setup Guide</div>
+      <div class="integration-steps">
+        <div class="int-step">
+          <div class="int-step-num">1</div>
+          <div class="int-step-body">
+            <h4>Create Your Google Sheet</h4>
+            <p>Go to <a href="https://sheets.google.com" target="_blank">sheets.google.com</a> → Create a new sheet named <code>ALDFG_NFDB_Master</code>. Create two tabs: <code>Reports</code> and <code>Species_Log</code>. Copy the Sheet ID from the URL — it's the long string between <code>/d/</code> and <code>/edit</code>.</p>
+          </div>
+        </div>
+        <div class="int-step">
+          <div class="int-step-num">2</div>
+          <div class="int-step-body">
+            <h4>Open Google Apps Script</h4>
+            <p>Go to <a href="https://script.google.com" target="_blank">script.google.com</a> → New Project → Name it <code>ALDFG Data Receiver</code>. Replace all code with this:</p>
+            <div class="code-block">
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+function doPost(e) {
+  try {
+    var ss = SpreadsheetApp.openById('PASTE_YOUR_SHEET_ID_HERE');
+    var data = JSON.parse(e.postData.contents);
+
+    if (data.type === 'report') {
+      var sheet = ss.getSheetByName('Reports');
+      sheet.appendRow([
+        data.ref, data.date, data.time, data.reporter,
+        data.email, data.org, data.reporterType,
+        data.district, data.state, data.location,
+        data.lat, data.lon, data.habitat,
+        data.depthBand, data.exactDepth,
+        data.gearType, data.material, data.size,
+        data.weight, data.condition, data.source,
+        data.severity, data.retrieval, data.notes,
+        data.mediaCount, new Date().toISOString(),
+        'Yes', 'Yes'
+      ]);
+    }
+
+    if (data.type === 'species') {
+      var spSheet = ss.getSheetByName('Species_Log');
+      var entries = data.speciesEntries || [];
+      entries.forEach(function(sp) {
+        spSheet.appendRow([
+          data.ref, data.date, data.observer,
+          data.observerType, data.lat, data.lon,
+          data.depthStart, data.depthEnd, data.depthAvg,
+          data.visibility, data.tempC,
+          sp.species, sp.group, sp.condition, sp.count,
+          data.notableSpecies, new Date().toISOString()
+        ]);
+      });
+    }
+
+    return ContentService
+      .createTextOutput(JSON.stringify({status:'success'}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({status:'error',message:err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+            </div>
+            <p>Replace <code>PASTE_YOUR_SHEET_ID_HERE</code> with your actual Sheet ID.</p>
+          </div>
+        </div>
+        <div class="int-step">
+          <div class="int-step-num">3</div>
+          <div class="int-step-body">
+            <h4>Deploy as Web App</h4>
+            <p>Click <strong>Deploy → New Deployment</strong> → Type: <strong>Web App</strong> → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong> → Click <strong>Deploy</strong> → Copy the <strong>Web App URL</strong>.</p>
+          </div>
+        </div>
+        <div class="int-step">
+          <div class="int-step-num">4</div>
+          <div class="int-step-body">
+            <h4>Paste URL into This File</h4>
+            <p>Open this <code>index.html</code> file in a text editor. Find line at the top:</p>
+            <div class="code-block">const SHEETS_WEBAPP_URL = "PASTE_YOUR_WEB_APP_URL_HERE";</div>
+            <p>Replace <code>PASTE_YOUR_WEB_APP_URL_HERE</code> with the URL you copied. Save the file. If hosted on GitHub Pages, commit the change — submissions now auto-sync to your sheet.</p>
+          </div>
+        </div>
+        <div class="int-step">
+          <div class="int-step-num">5</div>
+          <div class="int-step-body">
+            <h4>Share the Sheet with Your Team</h4>
+            <p>In Google Sheets → <strong>Share</strong> → Add your co-investigators and advisory committee emails. Set to <strong>Viewer</strong> or <strong>Editor</strong> as needed. They can monitor incoming data live from any device.</p>
+          </div>
+        </div>
+        <div class="int-step">
+          <div class="int-step-num">6</div>
+          <div class="int-step-body">
+            <h4>Deploy Website via GitHub Pages (Free Shareable URL)</h4>
+            <p>1. Go to <a href="https://github.com" target="_blank">github.com</a> → New repository → name it <code>aldfg-portal</code> → Public → Create<br>
+            2. Upload this <code>index.html</code> file (already wired with your Sheet URL)<br>
+            3. Go to repository <strong>Settings → Pages → Source: main branch → Save</strong><br>
+            4. Your live URL will be: <code>https://[your-username].github.io/aldfg-portal</code><br>
+            5. This URL is citable in your thesis, NFDB report, GGGI submission, and FAO data portal.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="background: var(--ocean-light); border-color: var(--ocean-mid);">
+      <div class="card-head" style="border-color: var(--ocean-mid); color: var(--ocean);">
+        <span>🔧</span> Troubleshooting
+      </div>
+      <table style="width:100%; font-size:13px; border-collapse:collapse;">
+        <tr style="background: var(--ocean); color:#fff;">
+          <th style="padding:8px 12px; text-align:left;">Problem</th>
+          <th style="padding:8px 12px; text-align:left;">Fix</th>
+        </tr>
+        <tr><td style="padding:8px 12px; border-bottom:1px solid var(--border);">Sheet stays empty after submit</td><td style="padding:8px 12px; border-bottom:1px solid var(--border);">Check Sheet ID is correct and you redeployed after pasting it</td></tr>
+        <tr><td style="padding:8px 12px; border-bottom:1px solid var(--border);">Apps Script execution error</td><td style="padding:8px 12px; border-bottom:1px solid var(--border);">Click Executions tab in Apps Script → read the error message</td></tr>
+        <tr><td style="padding:8px 12px; border-bottom:1px solid var(--border);">Access denied error</td><td style="padding:8px 12px; border-bottom:1px solid var(--border);">In deployment settings confirm "Who has access" = "Anyone"</td></tr>
+        <tr><td style="padding:8px 12px;">Works on desktop, not mobile</td><td style="padding:8px 12px;">Ensure <code>mode: 'no-cors'</code> is present in the fetch calls</td></tr>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  ALDFG Watch India · ICAR-Central Institute of Fisheries Education, Mumbai · Aligned with GGGI Best Practice Framework & FAO Voluntary Guidelines on ALDFG ·
+  <a href="https://www.gggi.org" target="_blank">GGGI</a> ·
+  <a href="https://www.fao.org/fishery/en/topic/166077" target="_blank">FAO</a>
+</footer>
+
+</body>
+</html>
